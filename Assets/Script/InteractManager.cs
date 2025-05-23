@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 
@@ -37,8 +38,94 @@ public class InteractManager : MonoBehaviour
     [SerializeField]
     TMP_Text phraseTextArea;
 
-    private void OnTriggerEnter(Collider other)
+    private void Start()
     {
-        Debug.Log($"Trigger with {other.gameObject.name}");
+        anim = GetComponent<Animator>();
     }
+
+    //private void OnTriggerEnter(Collider other)
+    //{
+    //    Debug.Log($"Trigger with {other.gameObject.name}");
+    //}
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (Input.GetKeyDown(talkkey) && !talking)
+        {
+            talking = true;
+
+            phraseArea.SetActive(true);
+
+            anim.SetBool(talkParameter, talking);
+
+            StartCoroutine(Talk(phrases[talkingIndex]));
+        }
+        else if(Input.GetKeyDown(nextPhrasekey) && talking && !typingPhrase)
+        {
+            if(talkingIndex + 1 < phrases.Length)
+            {
+                talkingIndex += 1;
+                StartCoroutine(Talk(phrases[talkingIndex]));
+            }
+            else
+            {
+                phraseArea.SetActive(false);
+
+                StopTalking();
+            }
+
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        StopTalking();
+    }
+
+    private void StopTalking()
+    {
+        talking = false;
+        talkingIndex = 0;
+        typingPhrase = false;
+        StopCoroutine(nameof(Talk));
+        anim.SetBool(talkParameter, talking);
+        phraseArea.SetActive(false);
+    }
+
+    IEnumerator Talk(string phrase)
+    {
+        typingPhrase = true;
+
+        phraseTextArea.text = "";
+
+        if (typeWords)
+        {
+            string[] words = phrase.Split(" ");
+
+            foreach (string word in words)
+            {
+                phraseTextArea.text += $" {word}";
+                yield return new WaitForSeconds(talkingWorkSpeed) ;
+            }
+        }
+        else
+        {
+            int length = phrase.Length;
+
+            for (int i = 0; i < length; i++)
+            {
+                phraseTextArea.text += phrase[i];
+                yield return new WaitForSeconds(talkingLettersSpeed);
+            }
+        }
+
+        if (talkingIndex < phrases.Length - 1)
+        {
+            phraseTextArea.text += "...";
+        }
+
+        typingPhrase = false;
+    }
+
+
 }

@@ -1,4 +1,8 @@
+using System.Collections;
+using UnityEditor.Rendering.Universal;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -6,6 +10,14 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] float speed = 3.0f;
     [SerializeField] float rotateSpeed = 60.0f;
     [SerializeField] Vector3 forward = Vector3.forward;
+    [SerializeField] Volume PostProcessvolume;
+    [SerializeField] private GameManager gameManager;
+    private Vignette vg;
+
+    private bool inivisibilityActive = false;
+    public bool InvisibilityActive { get => inivisibilityActive; set => inivisibilityActive = value; }
+
+    //private float curSpeed;
 
     float _xRotate = 0.0f;
 
@@ -17,8 +29,7 @@ public class PlayerManager : MonoBehaviour
     void Start()
     {
         _camera = Camera.main;
-        _mCharacterController = GetComponent<CharacterController>();
-
+        _mCharacterController = gameObject.GetComponent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
     }
 
@@ -42,16 +53,40 @@ public class PlayerManager : MonoBehaviour
         float turbo = Input.GetKey(KeyCode.LeftShift) ? 2:1;
         float curSpeed = speed * Input.GetAxis("Vertical") * turbo;
         Vector3 realForward = transform.TransformDirection(Vector3.forward);
-        
+
         if (Input.GetButton("Horizontal"))
         {
             realForward += transform.TransformDirection(Vector3.right) * Input.GetAxis("Horizontal");
+            //curSpeed = speed * Input.GetAxis("Horizontal") * turbo;
         }
+        //else if (Input.GetButton("Vertical"))
+        //{
+        //    realForward += transform.TransformDirection(Vector3.left) * Input.GetAxis("Vertical");
+        //    curSpeed = speed * Input.GetAxis("Vertical") * turbo;
+        //}
 
         realForward = Vector3.ClampMagnitude(realForward, 1);
 
         _mCharacterController.SimpleMove(realForward * curSpeed);
 
         playerAnimator.SetFloat(Speed, curSpeed / speed);
+
+        InvisibilityMode();
+    }
+
+    private void InvisibilityMode()
+    {
+        if (Input.GetKey(KeyCode.LeftControl))
+        {
+            inivisibilityActive = true;
+        }
+    }
+
+    private void OnTriggerEnter(Collider collision)
+    {
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            gameManager.PlayerDeath();
+        }
     }
 }
